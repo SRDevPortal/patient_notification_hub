@@ -1,6 +1,19 @@
 ### Patient Notification Hub
 
-Patient-focused configurable transactional notification engine
+Configurable patient transactional notifications for Frappe.
+
+The app observes configured document events, creates an idempotent notification
+outbox record, and delegates WhatsApp template delivery to `wa_chat_hub`.
+
+Initial supported workflows:
+
+- Sales Invoice generated
+- Patient Encounter submitted
+- Shipment order picked up
+- Shipment out for delivery
+
+The master switch and every generated rule are disabled by default. Configure and
+test approved Interakt templates before enabling live delivery.
 
 ### Installation
 

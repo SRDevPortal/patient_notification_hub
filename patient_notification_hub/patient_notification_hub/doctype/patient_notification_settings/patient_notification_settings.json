@@ -1,0 +1,214 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "creation": "2026-07-29 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "control_section",
+  "enabled",
+  "dry_run",
+  "pilot_patient",
+  "routing_section",
+  "enable_default_interakt_fallback",
+  "default_interakt_account",
+  "delivery_section",
+  "maximum_attempts",
+  "base_retry_delay_minutes",
+  "delivery_column",
+  "stale_sending_timeout_minutes",
+  "worker_batch_size",
+  "background_recovery_section",
+  "enable_background_recovery",
+  "enable_failed_retry",
+  "enable_queued_recovery",
+  "recovery_column",
+  "enable_stale_sending_recovery",
+  "queued_recovery_timeout_minutes",
+  "scheduler_status_html",
+  "recovery_settings_initialized",
+  "legacy_notifications_migration_completed",
+  "legacy_migration_completed"
+ ],
+ "fields": [
+  {
+   "fieldname": "control_section",
+   "fieldtype": "Section Break",
+   "label": "Notification Controls"
+  },
+  {
+   "default": "0",
+   "description": "Master switch for all automated patient notifications.",
+   "fieldname": "enabled",
+   "fieldtype": "Check",
+   "label": "Enable Patient Notifications"
+  },
+  {
+   "default": "1",
+   "description": "Create skipped audit records without sending messages.",
+   "fieldname": "dry_run",
+   "fieldtype": "Check",
+   "label": "Dry Run (Do Not Send)"
+  },
+  {
+   "description": "When selected, only this Patient is eligible.",
+   "fieldname": "pilot_patient",
+   "fieldtype": "Link",
+   "label": "Pilot Patient",
+   "options": "Patient"
+  },
+  {
+   "fieldname": "routing_section",
+   "fieldtype": "Section Break",
+   "label": "Account Routing"
+  },
+  {
+   "default": "0",
+   "fieldname": "enable_default_interakt_fallback",
+   "fieldtype": "Check",
+   "label": "Enable Default Interakt Fallback"
+  },
+  {
+   "depends_on": "eval:doc.enable_default_interakt_fallback",
+   "fieldname": "default_interakt_account",
+   "fieldtype": "Link",
+   "label": "Default Interakt Account",
+   "mandatory_depends_on": "eval:doc.enable_default_interakt_fallback",
+   "options": "Chat Channel Account"
+  },
+  {
+   "fieldname": "delivery_section",
+   "fieldtype": "Section Break",
+   "label": "Delivery and Retry"
+  },
+  {
+   "default": "3",
+   "fieldname": "maximum_attempts",
+   "fieldtype": "Int",
+   "label": "Maximum Attempts",
+   "reqd": 1
+  },
+  {
+   "default": "5",
+   "fieldname": "base_retry_delay_minutes",
+   "fieldtype": "Int",
+   "label": "Base Retry Delay (Minutes)",
+   "reqd": 1
+  },
+  {
+   "fieldname": "delivery_column",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "15",
+   "fieldname": "stale_sending_timeout_minutes",
+   "fieldtype": "Int",
+   "label": "Stale Sending Timeout (Minutes)",
+   "reqd": 1
+  },
+  {
+   "default": "50",
+   "fieldname": "worker_batch_size",
+   "fieldtype": "Int",
+   "label": "Worker Batch Size",
+   "reqd": 1
+  },
+  {
+   "fieldname": "background_recovery_section",
+   "fieldtype": "Section Break",
+   "label": "Background Recovery"
+  },
+  {
+   "default": "0",
+   "description": "Master switch for retrying or recovering notification records.",
+   "fieldname": "enable_background_recovery",
+   "fieldtype": "Check",
+   "label": "Enable Background Recovery"
+  },
+  {
+   "default": "1",
+   "depends_on": "eval:doc.enable_background_recovery",
+   "fieldname": "enable_failed_retry",
+   "fieldtype": "Check",
+   "label": "Enable Failed Retry"
+  },
+  {
+   "default": "1",
+   "depends_on": "eval:doc.enable_background_recovery",
+   "fieldname": "enable_queued_recovery",
+   "fieldtype": "Check",
+   "label": "Enable Queued Recovery"
+  },
+  {
+   "fieldname": "recovery_column",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "1",
+   "depends_on": "eval:doc.enable_background_recovery",
+   "fieldname": "enable_stale_sending_recovery",
+   "fieldtype": "Check",
+   "label": "Enable Stale Sending Recovery"
+  },
+  {
+   "default": "10",
+   "depends_on": "eval:doc.enable_background_recovery && doc.enable_queued_recovery",
+   "fieldname": "queued_recovery_timeout_minutes",
+   "fieldtype": "Int",
+   "label": "Queued Recovery Timeout (Minutes)",
+   "mandatory_depends_on": "eval:doc.enable_background_recovery && doc.enable_queued_recovery"
+  },
+  {
+   "fieldname": "scheduler_status_html",
+   "fieldtype": "HTML",
+   "label": "Scheduler Status"
+  },
+  {
+   "default": "0",
+   "fieldname": "recovery_settings_initialized",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Recovery Settings Initialized",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "legacy_notifications_migration_completed",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Legacy Notifications Migration Completed",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "legacy_migration_completed",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Legacy Migration Completed",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "issingle": 1,
+ "links": [],
+ "modified": "2026-07-29 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Patient Notification Hub",
+ "name": "Patient Notification Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

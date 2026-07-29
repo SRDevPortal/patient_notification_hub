@@ -1,0 +1,274 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "field:rule_key",
+ "creation": "2026-07-29 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "identity_section",
+  "rule_key",
+  "title",
+  "enabled",
+  "event_type",
+  "source_application",
+  "trigger_section",
+  "reference_doctype",
+  "document_event",
+  "trigger_mode",
+  "trigger_column",
+  "watched_field",
+  "previous_value",
+  "target_value",
+  "conditions_json",
+  "recipient_section",
+  "recipient_mode",
+  "patient_field",
+  "recipient_resolver",
+  "template_section",
+  "channel",
+  "template_name",
+  "language_code",
+  "template_column",
+  "template_category",
+  "preview_template",
+  "variables",
+  "delivery_section",
+  "deduplication_scope",
+  "event_key_template",
+  "priority"
+ ],
+ "fields": [
+  {
+   "fieldname": "identity_section",
+   "fieldtype": "Section Break",
+   "label": "Rule"
+  },
+  {
+   "description": "Stable machine-readable identifier.",
+   "fieldname": "rule_key",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Rule Key",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Title",
+   "reqd": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "enabled",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Enabled"
+  },
+  {
+   "fieldname": "event_type",
+   "fieldtype": "Data",
+   "label": "Event Type",
+   "reqd": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "source_application",
+   "fieldtype": "Data",
+   "label": "Source Application"
+  },
+  {
+   "fieldname": "trigger_section",
+   "fieldtype": "Section Break",
+   "label": "Trigger"
+  },
+  {
+   "fieldname": "reference_doctype",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Reference DocType",
+   "options": "DocType",
+   "reqd": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "document_event",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Document Event",
+   "options": "After Insert\nOn Update\nOn Submit\nOn Cancel",
+   "reqd": 1
+  },
+  {
+   "default": "Document Event",
+   "fieldname": "trigger_mode",
+   "fieldtype": "Select",
+   "label": "Trigger Mode",
+   "options": "Document Event\nField Changed\nField Changed To Value",
+   "reqd": 1
+  },
+  {
+   "fieldname": "trigger_column",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.trigger_mode!='Document Event'",
+   "fieldname": "watched_field",
+   "fieldtype": "Data",
+   "label": "Watched Field",
+   "mandatory_depends_on": "eval:doc.trigger_mode!='Document Event'"
+  },
+  {
+   "depends_on": "eval:doc.trigger_mode!='Document Event'",
+   "fieldname": "previous_value",
+   "fieldtype": "Data",
+   "label": "Previous Value"
+  },
+  {
+   "depends_on": "eval:doc.trigger_mode=='Field Changed To Value'",
+   "fieldname": "target_value",
+   "fieldtype": "Data",
+   "label": "Target Value",
+   "mandatory_depends_on": "eval:doc.trigger_mode=='Field Changed To Value'"
+  },
+  {
+   "description": "Optional JSON object or list of [field, operator, value] conditions.",
+   "fieldname": "conditions_json",
+   "fieldtype": "Code",
+   "label": "Conditions JSON",
+   "options": "JSON"
+  },
+  {
+   "fieldname": "recipient_section",
+   "fieldtype": "Section Break",
+   "label": "Patient Recipient"
+  },
+  {
+   "default": "Document Field",
+   "fieldname": "recipient_mode",
+   "fieldtype": "Select",
+   "label": "Recipient Mode",
+   "options": "Document Field\nRegistered Resolver",
+   "reqd": 1
+  },
+  {
+   "depends_on": "eval:doc.recipient_mode=='Document Field'",
+   "fieldname": "patient_field",
+   "fieldtype": "Data",
+   "label": "Patient Field",
+   "mandatory_depends_on": "eval:doc.recipient_mode=='Document Field'"
+  },
+  {
+   "depends_on": "eval:doc.recipient_mode=='Registered Resolver'",
+   "fieldname": "recipient_resolver",
+   "fieldtype": "Data",
+   "label": "Registered Resolver",
+   "mandatory_depends_on": "eval:doc.recipient_mode=='Registered Resolver'"
+  },
+  {
+   "fieldname": "template_section",
+   "fieldtype": "Section Break",
+   "label": "Template"
+  },
+  {
+   "default": "WhatsApp",
+   "fieldname": "channel",
+   "fieldtype": "Select",
+   "label": "Channel",
+   "options": "WhatsApp",
+   "reqd": 1
+  },
+  {
+   "fieldname": "template_name",
+   "fieldtype": "Data",
+   "label": "Interakt Template Name",
+   "reqd": 1
+  },
+  {
+   "default": "en",
+   "fieldname": "language_code",
+   "fieldtype": "Data",
+   "label": "Language Code",
+   "reqd": 1
+  },
+  {
+   "fieldname": "template_column",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "UTILITY",
+   "fieldname": "template_category",
+   "fieldtype": "Select",
+   "label": "Template Category",
+   "options": "UTILITY",
+   "reqd": 1
+  },
+  {
+   "description": "Sandboxed Jinja template used for WA Chat Hub display.",
+   "fieldname": "preview_template",
+   "fieldtype": "Long Text",
+   "label": "Message Preview Template"
+  },
+  {
+   "fieldname": "variables",
+   "fieldtype": "Table",
+   "label": "Body Variables",
+   "options": "Patient Notification Variable"
+  },
+  {
+   "fieldname": "delivery_section",
+   "fieldtype": "Section Break",
+   "label": "Delivery"
+  },
+  {
+   "default": "Once Per Document",
+   "fieldname": "deduplication_scope",
+   "fieldtype": "Select",
+   "label": "Deduplication Scope",
+   "options": "Once Per Document\nOnce Per Target Value\nEvery Transition",
+   "reqd": 1
+  },
+  {
+   "description": "Optional sandboxed Jinja template. Used for legacy-compatible event keys.",
+   "fieldname": "event_key_template",
+   "fieldtype": "Data",
+   "label": "Event Key Template"
+  },
+  {
+   "default": "Short",
+   "fieldname": "priority",
+   "fieldtype": "Select",
+   "label": "Queue",
+   "options": "Short",
+   "reqd": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-07-29 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Patient Notification Hub",
+ "name": "Patient Notification Rule",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "title"
+}

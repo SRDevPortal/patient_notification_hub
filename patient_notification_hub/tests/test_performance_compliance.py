@@ -24,15 +24,15 @@ class TestPatientNotificationPerformanceCompliance(FrappeTestCase):
 			declared,
 		)
 
-	@patch("patient_notification_hub.indexes.frappe.db.sql")
-	def test_online_index_uses_nonblocking_ddl(self, sql):
+	@patch("patient_notification_hub.indexes.frappe.db.sql_ddl")
+	def test_online_index_commits_before_nonblocking_ddl(self, sql_ddl):
 		add_online_index(
 			"Patient Notification",
 			"idx_test_status_queued",
 			("status", "queued_on"),
 		)
 
-		statement = sql.call_args.args[0].lower()
+		statement = sql_ddl.call_args.args[0].lower()
 		self.assertIn("algorithm=inplace", statement)
 		self.assertIn("lock=none", statement)
 

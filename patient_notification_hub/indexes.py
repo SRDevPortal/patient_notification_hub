@@ -71,7 +71,7 @@ def has_equivalent_index(doctype: str, fields: tuple[str, ...]) -> bool:
 def add_online_index(doctype: str, index_name: str, fields: tuple[str, ...]) -> None:
 	table = f"tab{doctype}"
 	columns = ", ".join(f"`{fieldname}`" for fieldname in fields)
-	frappe.db.sql(
+	frappe.db.sql_ddl(
 		f"""
 		alter table `{table}`
 		add index `{index_name}` ({columns}),

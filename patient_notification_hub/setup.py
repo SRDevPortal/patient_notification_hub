@@ -130,8 +130,20 @@ INITIAL_RULES = [
 	},
 ]
 
+APP_NAME = "patient_notification_hub"
+APP_MODULE = "patient_notification_hub"
+
 
 def validate_dependencies():
+	# install_app clears the shared module-map cache after frappe.init(), but the
+	# process-local map can still represent the apps that existed before this app
+	# was added to the bench. Rebuild it before sync_for() reads the map.
+	frappe.setup_module_map(include_all_apps=True)
+	if APP_MODULE not in (frappe.local.app_modules.get(APP_NAME) or []):
+		frappe.throw(
+			"Patient Notification Hub module metadata could not be discovered. "
+			"Verify the deployed app contains modules.txt and its DocType package, then retry installation."
+		)
 	if "wa_chat_hub" not in frappe.get_installed_apps():
 		frappe.throw("Patient Notification Hub requires the wa_chat_hub app.")
 

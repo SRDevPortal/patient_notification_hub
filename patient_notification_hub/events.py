@@ -38,11 +38,13 @@ def on_cancel(doc, method=None):
 
 
 def process_document_event(doc, document_event: str):
+	if frappe.flags.in_install or frappe.flags.in_migrate:
+		return []
 	if doc.doctype in OWN_DOCTYPES:
 		return []
 	try:
 		settings = frappe.get_cached_doc("Patient Notification Settings")
-	except frappe.DoesNotExistError:
+	except (frappe.DoesNotExistError, ImportError):
 		return []
 	if not cint(settings.enabled):
 		return []

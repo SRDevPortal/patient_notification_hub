@@ -39,6 +39,7 @@ def notification_doc():
 
 
 class TestPatientNotificationWorkers(FrappeTestCase):
+	@patch("patient_notification_hub.workers.process_retryable_events")
 	@patch("patient_notification_hub.workers.process_queued_notifications")
 	@patch("patient_notification_hub.workers.process_retryable_notifications")
 	@patch("patient_notification_hub.workers.recover_stale_notifications")
@@ -49,6 +50,7 @@ class TestPatientNotificationWorkers(FrappeTestCase):
 		recover_stale,
 		process_retryable,
 		process_queued,
+		process_events,
 	):
 		get_cached_doc.return_value = SimpleNamespace(
 			enabled=1,
@@ -58,11 +60,13 @@ class TestPatientNotificationWorkers(FrappeTestCase):
 
 		result = reconcile_notifications()
 
-		self.assertEqual(result, {"queued": 0, "failed": 0, "stale": 0})
+		self.assertEqual(result, {"queued": 0, "failed": 0, "stale": 0, "events": 0})
 		recover_stale.assert_not_called()
 		process_retryable.assert_not_called()
 		process_queued.assert_not_called()
+		process_events.assert_not_called()
 
+	@patch("patient_notification_hub.workers.process_retryable_events", return_value=3)
 	@patch("patient_notification_hub.workers.process_queued_notifications", return_value=2)
 	@patch("patient_notification_hub.workers.process_retryable_notifications")
 	@patch("patient_notification_hub.workers.recover_stale_notifications", return_value=1)
@@ -73,6 +77,7 @@ class TestPatientNotificationWorkers(FrappeTestCase):
 		recover_stale,
 		process_retryable,
 		process_queued,
+		process_events,
 	):
 		settings = SimpleNamespace(
 			enabled=1,
@@ -81,15 +86,18 @@ class TestPatientNotificationWorkers(FrappeTestCase):
 			enable_failed_retry=0,
 			enable_queued_recovery=1,
 			enable_stale_sending_recovery=1,
+			maximum_attempts=3,
+			worker_batch_size=50,
 		)
 		get_cached_doc.return_value = settings
 
 		result = reconcile_notifications()
 
-		self.assertEqual(result, {"queued": 2, "failed": 0, "stale": 1})
+		self.assertEqual(result, {"queued": 2, "failed": 0, "stale": 1, "events": 3})
 		recover_stale.assert_called_once_with(settings)
 		process_retryable.assert_not_called()
 		process_queued.assert_called_once_with(settings)
+		process_events.assert_called_once_with(settings)
 
 	@patch("patient_notification_hub.workers.enqueue_notification")
 	@patch("patient_notification_hub.workers.frappe.get_all")
@@ -114,10 +122,9 @@ class TestPatientNotificationWorkers(FrappeTestCase):
 		self.assertEqual(get_all.call_args.kwargs["limit_page_length"], 25)
 		enqueue.assert_called_once_with("NOTIF-OLD", enqueue_after_commit=False)
 
-	@patch("patient_notification_hub.workers.frappe.db.commit")
-	@patch("patient_notification_hub.workers.frappe.db.set_value")
+	@patch("patient_notification_hub.workers.reconcile_delivery")
 	@patch("patient_notification_hub.workers.frappe.get_all")
-	def test_stale_recovery_marks_records_retryable(self, get_all, set_value, commit):
+	def test_stale_recovery_marks_records_ambiguous(self, get_all, reconcile_delivery):
 		get_all.return_value = [frappe._dict(name="NOTIF-STALE")]
 		settings = SimpleNamespace(
 			enabled=1,
@@ -131,15 +138,7 @@ class TestPatientNotificationWorkers(FrappeTestCase):
 		count = recover_stale_notifications(settings)
 
 		self.assertEqual(count, 1)
-		filters = set_value.call_args.args[1]
-		updates = set_value.call_args.args[2]
-		self.assertEqual(filters["name"], ["in", ["NOTIF-STALE"]])
-		self.assertEqual(filters["status"], "Sending")
-		self.assertEqual(updates["status"], "Failed")
-		self.assertIsNone(updates["sending_started_on"])
-		self.assertIsNotNone(updates["next_retry_on"])
-		self.assertIn("stale", updates["last_error"])
-		commit.assert_called_once()
+		reconcile_delivery.assert_called_once_with("NOTIF-STALE", mark_unknown_if_missing=True)
 
 	@patch("patient_notification_hub.workers.frappe.db.commit")
 	@patch("patient_notification_hub.workers.send_whatsapp_template")
@@ -204,5 +203,46 @@ class TestPatientNotificationWorkers(FrappeTestCase):
 		self.assertEqual(result["status"], "Skipped")
 		self.assertEqual(notification.status, "Skipped")
 		self.assertIn("disabled", notification.skip_reason)
+		notification.save.assert_called_once()
+		commit.assert_called_once()
+
+	@patch("patient_notification_hub.workers.frappe.log_error")
+	@patch("patient_notification_hub.workers.frappe.db.commit")
+	@patch("patient_notification_hub.workers.frappe.db.rollback")
+	@patch("patient_notification_hub.workers.find_existing_chat_message", return_value=None)
+	@patch("patient_notification_hub.workers.send_whatsapp_template", side_effect=TimeoutError("timeout"))
+	@patch("patient_notification_hub.workers.claim_notification")
+	@patch("patient_notification_hub.workers.frappe.get_cached_doc")
+	@patch("patient_notification_hub.workers.frappe.get_doc")
+	def test_transport_exception_is_ambiguous_and_not_retryable(
+		self,
+		get_doc,
+		get_cached_doc,
+		claim_notification,
+		send_whatsapp_template,
+		find_existing_chat_message,
+		rollback,
+		commit,
+		log_error,
+	):
+		notification = notification_doc()
+		get_doc.return_value = notification
+		claim_notification.side_effect = lambda current, maximum_attempts: (
+			setattr(current, "status", "Sending")
+			or setattr(current, "attempt_count", 1)
+			or current
+		)
+		get_cached_doc.side_effect = [
+			SimpleNamespace(enabled=1, dry_run=0, pilot_patient=None, maximum_attempts=3),
+			SimpleNamespace(enabled=1),
+		]
+
+		result = send_notification(notification.name)
+
+		self.assertEqual(result["status"], "Outcome Unknown")
+		self.assertEqual(notification.status, "Outcome Unknown")
+		self.assertIsNone(notification.next_retry_on)
+		rollback.assert_called_once()
+		find_existing_chat_message.assert_called_once_with(notification.event_key)
 		notification.save.assert_called_once()
 		commit.assert_called_once()

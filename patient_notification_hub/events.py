@@ -3,7 +3,9 @@ from __future__ import annotations
 import frappe
 from frappe.utils import cint, cstr
 
+from patient_notification_hub.event_inbox import capture_failed_event
 from patient_notification_hub.outbox import create_notification
+from patient_notification_hub.ownership import hub_owns_rule
 from patient_notification_hub.registry import get_resolver
 from patient_notification_hub.rendering import (
 	render_event_key,
@@ -15,6 +17,7 @@ from patient_notification_hub.rules import get_enabled_rules, matches_conditions
 
 OWN_DOCTYPES = {
 	"Patient Notification",
+	"Patient Notification Event",
 	"Patient Notification Rule",
 	"Patient Notification Settings",
 	"Patient Notification Variable",
@@ -53,50 +56,66 @@ def process_document_event(doc, document_event: str):
 	created = []
 	for rule in get_enabled_rules(doc.doctype, document_event):
 		try:
+			if not hub_owns_rule(rule.rule_key):
+				continue
 			if not matches_trigger(rule, doc, previous_doc) or not matches_conditions(rule, doc):
 				continue
-			patient_name = resolve_patient(rule, doc, previous_doc)
-			if not patient_name or not frappe.db.exists("Patient", patient_name):
-				raise frappe.ValidationError(f"Patient could not be resolved for {doc.doctype} {doc.name}.")
-			if settings.pilot_patient and settings.pilot_patient != patient_name:
-				continue
-
-			patient_record = frappe.get_cached_doc("Patient", patient_name)
-			patient_doc = frappe._dict(
-				name=patient_record.name,
-				patient_name=patient_record.get("patient_name"),
-			)
-			body_values = resolve_variables(rule, doc, previous_doc, patient_doc)
-			preview = render_preview(rule, doc, previous_doc, patient_doc, body_values)
-			event_key = render_event_key(rule, doc, previous_doc)
-			notification = create_notification(
-				rule=rule,
-				event_key=event_key,
-				patient=patient_name,
-				reference_doctype=doc.doctype,
-				reference_name=doc.name,
-				body_values=body_values,
-				body_preview=preview,
-				context={
-					"document_event": document_event,
-					"watched_field": rule.watched_field,
-					"previous_value": (
-						cstr(previous_doc.get(rule.watched_field))
-						if previous_doc and rule.watched_field
-						else None
-					),
-					"current_value": cstr(doc.get(rule.watched_field)) if rule.watched_field else None,
-				},
-				settings=settings,
-			)
+			notification = process_rule(rule, doc, previous_doc, document_event, settings)
 			if notification:
 				created.append(notification)
-		except Exception:
+		except Exception as exc:
+			try:
+				capture_failed_event(rule, doc, previous_doc, document_event, exc)
+			except Exception:
+				frappe.log_error(
+					frappe.get_traceback(),
+					f"Patient Notification event capture failed for {doc.doctype} {doc.name}",
+				)
 			frappe.log_error(
 				frappe.get_traceback(),
 				f"Patient Notification rule {rule.name} failed for {doc.doctype} {doc.name}",
 			)
 	return created
+
+
+def process_rule(rule, doc, previous_doc, document_event: str, settings=None):
+	settings = settings or frappe.get_cached_doc("Patient Notification Settings")
+	if not hub_owns_rule(rule.rule_key):
+		return None
+	patient_name = resolve_patient(rule, doc, previous_doc)
+	if not patient_name or not frappe.db.exists("Patient", patient_name):
+		raise frappe.ValidationError(f"Patient could not be resolved for {doc.doctype} {doc.name}.")
+	if settings.pilot_patient and settings.pilot_patient != patient_name:
+		return None
+
+	patient_record = frappe.get_cached_doc("Patient", patient_name)
+	patient_doc = frappe._dict(
+		name=patient_record.name,
+		patient_name=patient_record.get("patient_name"),
+	)
+	body_values = resolve_variables(rule, doc, previous_doc, patient_doc)
+	preview = render_preview(rule, doc, previous_doc, patient_doc, body_values)
+	event_key = render_event_key(rule, doc, previous_doc)
+	return create_notification(
+		rule=rule,
+		event_key=event_key,
+		patient=patient_name,
+		reference_doctype=doc.doctype,
+		reference_name=doc.name,
+		body_values=body_values,
+		body_preview=preview,
+		context={
+			"document_event": document_event,
+			"watched_field": rule.watched_field,
+			"previous_value": (
+				cstr(previous_doc.get(rule.watched_field))
+				if previous_doc and rule.watched_field
+				else None
+			),
+			"current_value": cstr(doc.get(rule.watched_field)) if rule.watched_field else None,
+		},
+		settings=settings,
+	)
 
 
 def resolve_patient(rule, doc, previous_doc=None) -> str:

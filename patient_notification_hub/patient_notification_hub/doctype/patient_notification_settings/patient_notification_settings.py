@@ -15,6 +15,8 @@ class PatientNotificationSettings(Document):
 			frappe.throw(_("Stale Sending Timeout must be at least 1 minute."))
 		if cint(self.worker_batch_size) < 1:
 			frappe.throw(_("Worker Batch Size must be at least 1."))
+		if cint(getattr(self, "event_snapshot_retention_days", 7)) < 1:
+			frappe.throw(_("Event Snapshot Retention must be at least 1 day."))
 		if cint(self.queued_recovery_timeout_minutes) < 1:
 			frappe.throw(_("Queued Recovery Timeout must be at least 1 minute."))
 		if cint(self.enable_background_recovery) and not any(

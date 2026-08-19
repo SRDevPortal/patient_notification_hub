@@ -33,9 +33,17 @@
   "queued_on",
   "sending_started_on",
   "sent_on",
+  "reconciled_on",
   "next_retry_on",
   "skip_reason",
-  "last_error"
+  "last_error",
+  "manual_retry_authorized",
+  "recovery_audit_section",
+  "manual_retry_count",
+  "last_manual_action",
+  "last_manual_action_by",
+  "last_manual_action_on",
+  "last_manual_action_reason"
  ],
  "fields": [
   {
@@ -79,7 +87,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Status",
-   "options": "Queued\nSending\nSent\nFailed\nSkipped",
+   "options": "Queued\nSending\nSent\nFailed\nSkipped\nOutcome Unknown",
    "read_only": 1,
    "reqd": 1,
    "search_index": 1
@@ -217,6 +225,12 @@
    "read_only": 1
   },
   {
+   "fieldname": "reconciled_on",
+   "fieldtype": "Datetime",
+   "label": "Reconciled On",
+   "read_only": 1
+  },
+  {
    "fieldname": "next_retry_on",
    "fieldtype": "Datetime",
    "label": "Next Retry On",
@@ -233,6 +247,51 @@
    "fieldname": "last_error",
    "fieldtype": "Long Text",
    "label": "Last Error",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "manual_retry_authorized",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Manual Retry Authorized",
+   "read_only": 1
+  },
+  {
+   "fieldname": "recovery_audit_section",
+   "fieldtype": "Section Break",
+   "label": "Manual Recovery Audit"
+  },
+  {
+   "default": "0",
+   "fieldname": "manual_retry_count",
+   "fieldtype": "Int",
+   "label": "Manual Retry Count",
+   "read_only": 1
+  },
+  {
+   "fieldname": "last_manual_action",
+   "fieldtype": "Data",
+   "label": "Last Manual Action",
+   "read_only": 1
+  },
+  {
+   "fieldname": "last_manual_action_by",
+   "fieldtype": "Link",
+   "label": "Last Manual Action By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "last_manual_action_on",
+   "fieldtype": "Datetime",
+   "label": "Last Manual Action On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "last_manual_action_reason",
+   "fieldtype": "Small Text",
+   "label": "Last Manual Action Reason",
    "read_only": 1
   }
  ],

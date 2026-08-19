@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 from typing import Any
 
 import frappe
@@ -10,8 +11,29 @@ from frappe.utils.jinja import validate_template
 from patient_notification_hub.registry import get_resolver
 
 
+STANDARD_DOCUMENT_FIELDS = {"name", "owner", "creation", "modified", "modified_by", "docstatus", "idx"}
+
+
 def compile_preview(template: str) -> None:
 	validate_template(template)
+
+
+def validate_field_path(reference_doctype: str, path: str) -> None:
+	parts = [part.strip() for part in cstr(path).split(".") if part.strip()]
+	if not parts:
+		frappe.throw(_("Notification variable field path cannot be empty."))
+	current_doctype = reference_doctype
+	for index, part in enumerate(parts):
+		field = frappe.get_meta(current_doctype).get_field(part)
+		if part in STANDARD_DOCUMENT_FIELDS and index == len(parts) - 1:
+			return
+		if not field:
+			frappe.throw(_("Field {0} does not exist on {1}.").format(part, current_doctype))
+		if index == len(parts) - 1:
+			return
+		if field.fieldtype != "Link" or not field.options:
+			frappe.throw(_("Field {0} on {1} is not a Link field.").format(part, current_doctype))
+		current_doctype = field.options
 
 
 def resolve_variables(rule, doc, previous_doc, patient_doc) -> list[str]:
@@ -109,16 +131,27 @@ def render_preview(rule, doc, previous_doc, patient_doc, values: list[str]) -> s
 
 def render_event_key(rule, doc, previous_doc) -> str:
 	if rule.event_key_template:
-		return cstr(
+		key = cstr(
 			frappe.render_template(
 				rule.event_key_template,
 				{"doc": doc, "previous_doc": previous_doc or {}, "rule": rule},
 			)
 		).strip()
+		return normalize_event_key(key)
 
 	parts = ["rule", rule.rule_key, doc.doctype, doc.name]
 	if rule.deduplication_scope == "Once Per Target Value":
 		parts.append(cstr(rule.target_value or doc.get(rule.watched_field)))
 	elif rule.deduplication_scope == "Every Transition":
 		parts.append(cstr(doc.modified))
-	return ":".join(parts)
+	return normalize_event_key(":".join(parts))
+
+
+def normalize_event_key(key: str) -> str:
+	key = cstr(key).strip()
+	if not key:
+		frappe.throw(_("Notification event key cannot be empty."))
+	if len(key) <= 140:
+		return key
+	digest = hashlib.sha256(key.encode()).hexdigest()
+	return f"{key[:68]}:sha256:{digest}"

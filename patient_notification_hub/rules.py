@@ -25,19 +25,25 @@ def get_enabled_rules(reference_doctype: str, document_event: str):
 	key = rule_cache_key(reference_doctype, document_event)
 	names = frappe.cache().get_value(key)
 	if names is None:
-		rows = frappe.get_all(
-			"Patient Notification Rule",
-			filters={
-				"enabled": 1,
-				"reference_doctype": reference_doctype,
-				"document_event": document_event,
-			},
-			fields=["name"],
-			order_by="creation asc",
-			limit_start=0,
-			limit_page_length=RULE_QUERY_LIMIT,
-		)
-		names = [row.name for row in rows]
+		names = []
+		start = 0
+		while True:
+			rows = frappe.get_all(
+				"Patient Notification Rule",
+				filters={
+					"enabled": 1,
+					"reference_doctype": reference_doctype,
+					"document_event": document_event,
+				},
+				fields=["name"],
+				order_by="creation asc, name asc",
+				limit_start=start,
+				limit_page_length=RULE_QUERY_LIMIT,
+			)
+			names.extend(row.name for row in rows)
+			if len(rows) < RULE_QUERY_LIMIT:
+				break
+			start += RULE_QUERY_LIMIT
 		frappe.cache().set_value(key, names, expires_in_sec=RULE_CACHE_TTL_SECONDS)
 	return [frappe.get_cached_doc("Patient Notification Rule", name) for name in names]
 

@@ -39,3 +39,9 @@ class TestPatientNotificationRendering(FrappeTestCase):
 		)
 		enabled_field = frappe.get_meta("Patient Notification Rule").get_field("enabled")
 		self.assertEqual(cint(enabled_field.default), 0)
+
+	def test_initial_invoice_rule_is_valid_when_enabled(self):
+		rule = frappe.get_doc("Patient Notification Rule", "sales_invoice_generated")
+		rule.enabled = 1
+
+		rule.validate()

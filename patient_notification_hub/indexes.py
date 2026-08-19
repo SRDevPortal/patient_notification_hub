@@ -39,6 +39,26 @@ INDEXES = (
 		"idx_pnh_variable_parent_parenttype",
 		("parent", "parenttype"),
 	),
+	(
+		"Patient Notification Event",
+		"idx_pnh_event_status_retry",
+		("status", "next_retry_on"),
+	),
+	(
+		"Patient Notification Event",
+		"idx_pnh_event_status_captured",
+		("status", "captured_on"),
+	),
+	(
+		"Patient Notification Event",
+		"idx_pnh_event_status_processing",
+		("status", "last_attempt_on"),
+	),
+	(
+		"Patient Notification Event",
+		"idx_pnh_event_reference",
+		("reference_doctype", "reference_name"),
+	),
 )
 
 

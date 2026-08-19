@@ -7,7 +7,7 @@ from patient_notification_hub.patient_notification_hub.doctype.patient_notificat
 	PatientNotificationSettings,
 	get_scheduler_status,
 )
-from patient_notification_hub.rendering import render_event_key
+from patient_notification_hub.rendering import normalize_event_key, render_event_key
 from patient_notification_hub.rules import matches_conditions, matches_trigger
 
 
@@ -116,3 +116,17 @@ class TestPatientNotificationRules(FrappeTestCase):
 			render_event_key(rule, doc, None),
 			"shipment:SHIP-0001:order_picked_up",
 		)
+
+	def test_long_event_keys_are_deterministically_bounded(self):
+		key = normalize_event_key("event:" + ("x" * 300))
+
+		self.assertLessEqual(len(key), 140)
+		self.assertEqual(key, normalize_event_key("event:" + ("x" * 300)))
+
+	def test_enabled_rule_rejects_unsupported_condition_operator(self):
+		rule = frappe.get_doc("Patient Notification Rule", "sales_invoice_generated")
+		rule.enabled = 1
+		rule.conditions_json = '[["docstatus", "contains", 1]]'
+
+		with self.assertRaises(frappe.ValidationError):
+			rule.validate()

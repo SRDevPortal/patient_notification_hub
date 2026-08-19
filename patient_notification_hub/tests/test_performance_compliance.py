@@ -19,6 +19,8 @@ class TestPatientNotificationPerformanceCompliance(FrappeTestCase):
 		)
 		self.assertIn(("Patient Notification", ("status", "queued_on")), declared)
 		self.assertIn(("Patient Notification", ("status", "sending_started_on")), declared)
+		self.assertIn(("Patient Notification Event", ("status", "captured_on")), declared)
+		self.assertIn(("Patient Notification Event", ("status", "last_attempt_on")), declared)
 		self.assertIn(
 			("Patient Notification Variable", ("parent", "parenttype")),
 			declared,
@@ -55,3 +57,20 @@ class TestPatientNotificationPerformanceCompliance(FrappeTestCase):
 			redis.set_value.call_args.kwargs["expires_in_sec"],
 			RULE_CACHE_TTL_SECONDS,
 		)
+
+	@patch("patient_notification_hub.rules.frappe.get_cached_doc")
+	@patch("patient_notification_hub.rules.frappe.get_all")
+	@patch("patient_notification_hub.rules.frappe.cache")
+	def test_rule_lookup_paginates_beyond_one_hundred(self, cache, get_all, get_cached_doc):
+		redis = Mock()
+		redis.get_value.return_value = None
+		cache.return_value = redis
+		first_page = [frappe._dict(name=f"RULE-{index:03}") for index in range(100)]
+		get_all.side_effect = [first_page, [frappe._dict(name="RULE-100")]]
+		get_cached_doc.side_effect = lambda doctype, name: frappe._dict(name=name)
+
+		rules = get_enabled_rules("Sales Invoice", "On Submit")
+
+		self.assertEqual(len(rules), 101)
+		self.assertEqual(get_all.call_args_list[0].kwargs["limit_start"], 0)
+		self.assertEqual(get_all.call_args_list[1].kwargs["limit_start"], 100)

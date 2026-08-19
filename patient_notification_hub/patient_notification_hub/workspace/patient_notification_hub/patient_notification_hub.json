@@ -1,6 +1,6 @@
 {
  "charts": [],
- "content": "[{\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Patient Notification Hub</b></span>\",\"col\":12}},{\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Notifications\",\"col\":4}},{\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Rules\",\"col\":4}},{\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Settings\",\"col\":4}}]",
+ "content": "[{\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Patient Notification Hub</b></span>\",\"col\":12}},{\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Notifications\",\"col\":3}},{\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Events\",\"col\":3}},{\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Rules\",\"col\":3}},{\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Settings\",\"col\":3}}]",
  "creation": "2026-07-29 00:00:00.000000",
  "custom_blocks": [],
  "docstatus": 0,
@@ -28,6 +28,16 @@
    "label": "Notifications",
    "link_count": 0,
    "link_to": "Patient Notification",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Events",
+   "link_count": 0,
+   "link_to": "Patient Notification Event",
    "link_type": "DocType",
    "onboard": 0,
    "type": "Link"
@@ -86,6 +96,13 @@
    "doc_view": "List",
    "label": "Rules",
    "link_to": "Patient Notification Rule",
+   "type": "DocType"
+  },
+  {
+   "color": "Yellow",
+   "doc_view": "List",
+   "label": "Events",
+   "link_to": "Patient Notification Event",
    "type": "DocType"
   },
   {

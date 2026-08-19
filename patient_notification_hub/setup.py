@@ -161,6 +161,7 @@ def after_migrate():
 	ensure_initial_rules()
 	migrate_legacy_configuration()
 	migrate_legacy_notifications()
+	ensure_indexes()
 
 
 def ensure_settings():
@@ -173,6 +174,7 @@ def ensure_settings():
 		"base_retry_delay_minutes": 5,
 		"stale_sending_timeout_minutes": 15,
 		"worker_batch_size": 50,
+		"event_snapshot_retention_days": 7,
 		"enable_background_recovery": 0,
 		"enable_failed_retry": 1,
 		"enable_queued_recovery": 1,

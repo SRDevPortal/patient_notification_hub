@@ -18,6 +18,7 @@
   "delivery_column",
   "stale_sending_timeout_minutes",
   "worker_batch_size",
+  "event_snapshot_retention_days",
   "background_recovery_section",
   "enable_background_recovery",
   "enable_failed_retry",
@@ -186,6 +187,14 @@
    "hidden": 1,
    "label": "Legacy Migration Completed",
    "read_only": 1
+  },
+  {
+   "default": "7",
+   "description": "Discard unreplayed event snapshots after this many days; processed snapshots are cleared immediately.",
+   "fieldname": "event_snapshot_retention_days",
+   "fieldtype": "Int",
+   "label": "Event Snapshot Retention (Days)",
+   "reqd": 1
   }
  ],
  "index_web_pages_for_search": 1,

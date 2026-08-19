@@ -19,6 +19,9 @@ doc_events = {
 }
 
 scheduler_events = {
+	"daily": [
+		"patient_notification_hub.event_inbox.purge_expired_event_snapshots",
+	],
 	"cron": {
 		"*/5 * * * *": [
 			"patient_notification_hub.workers.reconcile_notifications",

@@ -141,6 +141,7 @@ class TestPatientNotificationWorkers(FrappeTestCase):
 		reconcile_delivery.assert_called_once_with("NOTIF-STALE", mark_unknown_if_missing=True)
 
 	@patch("patient_notification_hub.workers.frappe.db.commit")
+	@patch("patient_notification_hub.workers.find_existing_chat_message", return_value=None)
 	@patch("patient_notification_hub.workers.send_whatsapp_template")
 	@patch("patient_notification_hub.workers.claim_notification")
 	@patch("patient_notification_hub.workers.frappe.get_cached_doc")
@@ -151,6 +152,7 @@ class TestPatientNotificationWorkers(FrappeTestCase):
 		get_cached_doc,
 		claim_notification,
 		send_whatsapp_template,
+		find_existing_chat_message,
 		commit,
 	):
 		notification = notification_doc()
@@ -184,7 +186,56 @@ class TestPatientNotificationWorkers(FrappeTestCase):
 		self.assertEqual(notification.chat_message, "MSG-0001")
 		self.assertEqual(notification.provider_message_id, "PROVIDER-0001")
 		self.assertEqual(notification.attempt_count, 1)
+		find_existing_chat_message.assert_called_once_with(notification.event_key)
 		notification.save.assert_called_once()
+		commit.assert_called_once()
+
+	@patch("patient_notification_hub.workers.frappe.db.commit")
+	@patch("patient_notification_hub.workers.frappe.db.get_value", return_value="Interakt Account")
+	@patch("patient_notification_hub.workers.send_whatsapp_template")
+	@patch("patient_notification_hub.workers.claim_notification")
+	@patch("patient_notification_hub.workers.find_existing_chat_message")
+	@patch("patient_notification_hub.workers.frappe.get_cached_doc")
+	@patch("patient_notification_hub.workers.frappe.get_doc")
+	def test_existing_delivery_evidence_is_reconciled_before_send(
+		self,
+		get_doc,
+		get_cached_doc,
+		find_existing_chat_message,
+		claim_notification,
+		send_whatsapp_template,
+		get_value,
+		commit,
+	):
+		notification = notification_doc()
+		evidence = frappe._dict(
+			name="MSG-EXISTING",
+			conversation="CONV-EXISTING",
+			provider_message_id="PROVIDER-EXISTING",
+			creation=frappe.utils.now_datetime(),
+		)
+		get_doc.return_value = notification
+		get_cached_doc.side_effect = [
+			SimpleNamespace(enabled=1, dry_run=0, pilot_patient=None),
+			SimpleNamespace(enabled=1),
+		]
+		find_existing_chat_message.return_value = evidence
+
+		result = send_notification(notification.name)
+
+		self.assertTrue(result["success"])
+		self.assertTrue(result["reconciled"])
+		self.assertEqual(notification.status, "Sent")
+		self.assertEqual(notification.chat_message, "MSG-EXISTING")
+		self.assertEqual(notification.provider_message_id, "PROVIDER-EXISTING")
+		claim_notification.assert_not_called()
+		send_whatsapp_template.assert_not_called()
+		get_value.assert_called_once_with(
+			"Chat Conversation",
+			"CONV-EXISTING",
+			"channel_account",
+		)
+		notification.save.assert_called_once_with(ignore_permissions=True)
 		commit.assert_called_once()
 
 	@patch("patient_notification_hub.workers.frappe.db.commit")
@@ -243,6 +294,7 @@ class TestPatientNotificationWorkers(FrappeTestCase):
 		self.assertEqual(notification.status, "Outcome Unknown")
 		self.assertIsNone(notification.next_retry_on)
 		rollback.assert_called_once()
-		find_existing_chat_message.assert_called_once_with(notification.event_key)
+		self.assertEqual(find_existing_chat_message.call_count, 2)
+		find_existing_chat_message.assert_called_with(notification.event_key)
 		notification.save.assert_called_once()
 		commit.assert_called_once()

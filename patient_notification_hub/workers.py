@@ -46,6 +46,10 @@ def send_notification(notification_name: str) -> dict[str, Any]:
 	if cint(settings.dry_run):
 		return mark_skipped(notification, "Dry run is enabled.")
 
+	evidence = find_existing_chat_message(notification.event_key)
+	if evidence:
+		return mark_sent_from_evidence(notification, evidence)
+
 	maximum_attempts = max(cint(settings.maximum_attempts), 1)
 	if (
 		cint(notification.attempt_count) >= maximum_attempts

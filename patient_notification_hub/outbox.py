@@ -4,6 +4,7 @@ from typing import Any
 
 import frappe
 from frappe.utils import cint, now_datetime
+from frappe.utils.background_jobs import get_queues_timeout
 
 
 NOTIFICATION_DOCTYPE = "Patient Notification"
@@ -64,10 +65,18 @@ def create_notification(
 	return notification.name
 
 
+def get_notification_queue() -> str:
+	"""Opt into a provisioned dedicated queue; existing sites keep their routing."""
+	queue = frappe.conf.get("patient_notification_queue") or "short"
+	if not isinstance(queue, str) or queue not in get_queues_timeout():
+		raise ValueError("patient_notification_queue must name a queue configured in Frappe workers")
+	return queue
+
+
 def enqueue_notification(notification_name: str, *, enqueue_after_commit: bool) -> None:
 	frappe.enqueue(
 		"patient_notification_hub.workers.send_notification",
-		queue="short",
+		queue=get_notification_queue(),
 		timeout=90,
 		enqueue_after_commit=enqueue_after_commit,
 		job_id=f"patient_notification_{notification_name}",

@@ -5,6 +5,7 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils import cint
 
+from patient_notification_hub.privacy import browser_response
 from patient_notification_hub.registry import get_resolver
 from patient_notification_hub.rendering import (
 	STANDARD_DOCUMENT_FIELDS,
@@ -112,6 +113,7 @@ class PatientNotificationRule(Document):
 
 
 @frappe.whitelist()
+@browser_response
 def test_rule(name: str, reference_name: str):
 	frappe.only_for("System Manager")
 	rule = frappe.get_doc("Patient Notification Rule", name)

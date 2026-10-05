@@ -68,3 +68,7 @@ Pre-commit is configured to use the following tools for checking and formatting 
 ### License
 
 mit
+
+## Customer number privacy
+
+When privacy_shield is enabled, restricted users receive masked rendered previews, template values, context, and delivery errors for Patient Notification records. Captured event snapshots are removed from restricted responses, and raw notification exports or printing are denied. Background delivery continues to use the original server-side values, while users with full-number capability retain the original Desk and API responses.

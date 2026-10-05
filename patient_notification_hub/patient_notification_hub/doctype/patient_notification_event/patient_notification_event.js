@@ -17,6 +17,7 @@ frappe.ui.form.on("Patient Notification Event", {
 function call_event_action(frm, action) {
 	return frappe.call({
 		method: `patient_notification_hub.patient_notification_hub.doctype.patient_notification_event.patient_notification_event.${action}`,
+		type: "POST",
 		args: { name: frm.doc.name },
 		freeze: true,
 		callback: () => frm.reload_doc(),

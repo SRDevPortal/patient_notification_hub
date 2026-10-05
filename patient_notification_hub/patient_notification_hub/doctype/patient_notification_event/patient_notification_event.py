@@ -3,6 +3,7 @@ from frappe import _
 from frappe.model.document import Document
 
 from patient_notification_hub.event_inbox import enqueue_event
+from patient_notification_hub.privacy import browser_response
 
 
 class PatientNotificationEvent(Document):
@@ -14,7 +15,8 @@ def _get_event(name: str):
 	return frappe.get_doc("Patient Notification Event", name)
 
 
-@frappe.whitelist()
+@frappe.whitelist(methods=["POST"])
+@browser_response
 def retry_event(name: str):
 	event = _get_event(name)
 	if event.status not in {"Captured", "Failed"}:
@@ -29,7 +31,8 @@ def retry_event(name: str):
 	return {"success": True, "status": "Captured"}
 
 
-@frappe.whitelist()
+@frappe.whitelist(methods=["POST"])
+@browser_response
 def discard_event(name: str):
 	event = _get_event(name)
 	if event.status == "Processed":

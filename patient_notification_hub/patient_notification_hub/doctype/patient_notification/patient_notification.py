@@ -4,6 +4,7 @@ from frappe.model.document import Document
 from frappe.utils import cint, cstr, now_datetime
 
 from patient_notification_hub.outbox import enqueue_notification
+from patient_notification_hub.privacy import browser_response
 from patient_notification_hub.workers import reconcile_delivery
 
 
@@ -26,13 +27,15 @@ def _audit_recovery_action(notification, action: str, reason: str) -> None:
 	notification.last_manual_action_reason = reason
 
 
-@frappe.whitelist()
+@frappe.whitelist(methods=["POST"])
+@browser_response
 def reconcile_notification(name: str):
 	_get_notification(name)
 	return reconcile_delivery(name)
 
 
-@frappe.whitelist()
+@frappe.whitelist(methods=["POST"])
+@browser_response
 def retry_notification(name: str, reason: str, confirm_ambiguous: int = 0):
 	notification = _get_notification(name)
 	if notification.status == "Outcome Unknown" and not cint(confirm_ambiguous):
@@ -53,7 +56,8 @@ def retry_notification(name: str, reason: str, confirm_ambiguous: int = 0):
 	return {"success": True, "status": "Queued"}
 
 
-@frappe.whitelist()
+@frappe.whitelist(methods=["POST"])
+@browser_response
 def mark_notification_sent(name: str, reason: str):
 	notification = _get_notification(name)
 	if notification.status not in {"Failed", "Outcome Unknown"}:

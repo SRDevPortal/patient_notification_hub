@@ -57,6 +57,7 @@ function prompt_reason(title, callback) {
 function call_action(frm, action, args = {}) {
 	return frappe.call({
 		method: `patient_notification_hub.patient_notification_hub.doctype.patient_notification.patient_notification.${action}`,
+		type: "POST",
 		args: { name: frm.doc.name, ...args },
 		freeze: true,
 		callback: () => frm.reload_doc(),

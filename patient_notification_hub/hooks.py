@@ -33,3 +33,7 @@ patient_notification_resolvers = {
 	"patient_name": "patient_notification_hub.resolvers.patient_name",
 	"invoice_amount": "patient_notification_hub.resolvers.invoice_amount",
 }
+
+before_request = ["patient_notification_hub.privacy.guard_raw_outputs"]
+auth_hooks = ["patient_notification_hub.privacy.guard_raw_outputs"]
+after_request = ["patient_notification_hub.privacy.protect_response"]

@@ -129,7 +129,7 @@ def browser_response(fn):
 def _payload_doctype(payload):
     if isinstance(payload, dict):
         doctype = payload.get("doctype")
-        if doctype in TARGET_DOCTYPES:
+        if isinstance(doctype, str) and doctype in TARGET_DOCTYPES:
             return doctype
         for key in ("docs", "data", "message", "result"):
             found = _payload_doctype(payload.get(key))
@@ -146,7 +146,7 @@ def _payload_doctype(payload):
 def _request_doctype(request=None, payload=None):
     form = getattr(frappe.local, "form_dict", {}) or {}
     for key in ("doctype", "dt", "parent_doctype"):
-        if form.get(key) in TARGET_DOCTYPES:
+        if isinstance(form.get(key), str) and form.get(key) in TARGET_DOCTYPES:
             return form.get(key)
 
     selected = form.get("select_columns")
@@ -201,7 +201,7 @@ def guard_raw_outputs():
 
 def protect_response(request, response):
     """Project successful JSON responses after normal Frappe authorization."""
-    if not 200 <= response.status_code < 300:
+    if response is None or not 200 <= response.status_code < 300:
         return
     try:
         if not restricted():

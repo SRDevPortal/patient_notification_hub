@@ -24,6 +24,26 @@ class TestNotificationNumberPrivacy(unittest.TestCase):
             privacy.protect_response(request, response)
         return response
 
+    def test_unhashable_doctype_does_not_break_unrelated_requests(self):
+        for invalid in ({"name": "CRM Lead"}, ["CRM Lead"], 7, None):
+            with self.subTest(value=invalid):
+                response = self.run_projection("/api/method/test", {"message": "ok"},
+                    form={"doctype": invalid, "dt": invalid, "parent_doctype": invalid})
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(response.get_json(), {"message": "ok"})
+
+    def test_malformed_outer_doctype_keeps_nested_notifications_protected(self):
+        response = self.run_projection("/api/method/test", {
+            "doctype": {}, "message": [{"doctype": [], "data": {
+                "doctype": "Patient Notification", "body_preview": self.phone,
+                "document_json": self.phone}}]}, form={"doctype": {}})
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn(self.phone, response.get_data(as_text=True))
+        self.assertNotIn("document_json", response.get_data(as_text=True))
+
+    def test_missing_response_does_not_hide_original_exception(self):
+        self.assertIsNone(privacy.protect_response(None, None))
+
     def test_project_masks_preview_values_and_errors_without_mutation(self):
         raw = {
             "doctype": "Patient Notification",
